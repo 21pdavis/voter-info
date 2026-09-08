@@ -9,6 +9,9 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start
     healthCheckPath: /health
+    # Deploys are CI-gated: GitHub Actions pings the deploy hook only after
+    # typecheck + build pass. See .github/workflows/ci.yml.
+    autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "20"
