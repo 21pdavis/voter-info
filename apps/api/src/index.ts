@@ -1,8 +1,9 @@
 import "dotenv/config";
-import express from "express";
+import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 import { clerkMiddleware } from "@clerk/express";
 import { legislatorsRouter } from "./routes/legislators";
+import { meRouter } from "./routes/me";
 
 const app = express();
 
@@ -27,6 +28,21 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/legislators", legislatorsRouter);
+app.use("/api/me", meRouter);
+
+// JSON error handler. Notably, clerkMiddleware() throws on a malformed bearer
+// token; treat those as 401 rather than letting Express return an HTML
+// stack-trace page.
+const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  const isTokenError =
+    err instanceof SyntaxError || /token|jwt/i.test(String(err?.message ?? ""));
+  if (isTokenError) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+  console.error(err);
+  return res.status(500).json({ error: "Internal error" });
+};
+app.use(errorHandler);
 
 // 0.0.0.0 so the API is reachable from Docker and from a physical phone on the LAN.
 const port = Number(process.env.PORT ?? 4000);
