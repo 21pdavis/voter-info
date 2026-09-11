@@ -14,6 +14,12 @@
       "@clerk/expo",
       "expo-secure-store",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4e882c47-90a8-4751-a63d-eb1cd4258ec4"
+      }
+    },
+    "owner": "pcdavis135"
   }
 }
