@@ -8,3 +8,5 @@ web-build/
 .env.local
 .env.*.local
 .DS_Store
+.neon
+.claude/settings.local.json
