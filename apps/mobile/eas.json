@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 13.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:4000",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c2ltcGxlLWRvZy00MjIyLmNsZXJrLmFjY291bnRzLmRldiQ"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://voter-info-api-qa.onrender.com",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c2ltcGxlLWRvZy00MjIyLmNsZXJrLmFjY291bnRzLmRldiQ"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://voter-info-api.onrender.com",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_c2ltcGxlLWRvZy00MjIyLmNsZXJrLmFjY291bnRzLmRldiQ"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

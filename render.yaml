@@ -1,22 +1,51 @@
-# Render Blueprint — deploys the API as a persistent web service.
-# Create a new Blueprint in the Render dashboard and point it at this repo.
+# Render Blueprint — declares both persistent API environments:
+#   - voter-info-api     (prod, tracks main, Neon `main` branch)
+#   - voter-info-api-qa  (qa,   tracks qa,   Neon `qa` branch)
+# `dev` has no deployed Render service — that's your local machine against the
+# Neon `dev` branch (or unset DATABASE_URL, which falls back to sample data).
+#
+# Both services are CI-gated, not auto-deployed: GitHub Actions pings each
+# service's own deploy hook only after typecheck + build pass for that branch.
+# See .github/workflows/ci.yml.
 services:
   - type: web
     name: voter-info-api
     runtime: node
     plan: free
+    branch: main
     rootDir: apps/api
     buildCommand: npm install && npm run build
     startCommand: npm run start
     healthCheckPath: /health
-    # Deploys are CI-gated: GitHub Actions pings the deploy hook only after
-    # typecheck + build pass. See .github/workflows/ci.yml.
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "20"
-      # Set these in the Render dashboard (Environment tab). Leave blank to run
-      # without a database (the API falls back to bundled sample data).
+      # Set these in the Render dashboard (Environment tab) — Neon `main`
+      # branch connection string + prod Clerk keys. Leave DATABASE_URL blank
+      # to run on bundled sample data instead of a real database.
+      - key: DATABASE_URL
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+
+  - type: web
+    name: voter-info-api-qa
+    runtime: node
+    plan: free
+    branch: qa
+    rootDir: apps/api
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Neon `qa` branch connection string + (usually the same dev-instance)
+      # Clerk keys. Leave DATABASE_URL blank to run on sample data.
       - key: DATABASE_URL
         sync: false
       - key: CLERK_PUBLISHABLE_KEY

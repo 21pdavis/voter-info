@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, qa]
   pull_request:
 
 jobs:
@@ -37,13 +37,22 @@ jobs:
   deploy:
     name: Deploy API to Render
     needs: [api, mobile]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/qa'
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render deploy hook
+      - name: Trigger Render deploy hook (prod)
+        if: github.ref == 'refs/heads/main'
         run: |
           if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
             echo "RENDER_DEPLOY_HOOK_URL secret not set — skipping deploy."
             exit 0
           fi
           curl -fsSL "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - name: Trigger Render deploy hook (qa)
+        if: github.ref == 'refs/heads/qa'
+        run: |
+          if [ -z "${{ secrets.RENDER_QA_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_QA_DEPLOY_HOOK_URL secret not set — skipping deploy."
+            exit 0
+          fi
+          curl -fsSL "${{ secrets.RENDER_QA_DEPLOY_HOOK_URL }}"

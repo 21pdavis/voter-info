@@ -14,12 +14,26 @@ your **state representatives** (state House / Assembly).
 | ---------- | -------------------------------------------------- |
 | Mobile     | React Native + Expo (TypeScript)                   |
 | API        | Node.js + Express (TypeScript), hosted on Render   |
-| Database   | PostgreSQL on Supabase                             |
+| Database   | PostgreSQL on Neon                                 |
 | ORM        | Drizzle                                            |
 | Auth       | Clerk (wired in the API, gated behind env vars)    |
-| CI/CD      | GitHub Actions → Render deploy hook on push to main |
+| CI/CD      | GitHub Actions → Render deploy hooks on push to main/qa |
 
-Request flow: `React Native (Expo)` → `Clerk (JWT, later)` → `Render (Express)` → `Drizzle` → `Supabase (Postgres)`
+Request flow: `React Native (Expo)` → `Clerk (JWT)` → `Render (Express)` → `Drizzle` → `Neon (Postgres)`
+
+## Environments
+
+Three tiers, mirroring a typical dev → qa → prod flow:
+
+| Tier | API | Database | Mobile |
+| ---- | --- | -------- | ------ |
+| **dev**  | your machine (`npm run dev`) | Neon `dev` branch (or unset — sample data) | `npx expo start`, EAS `development` build profile |
+| **qa**   | Render `voter-info-api-qa`, tracks `qa` branch | Neon `qa` branch | EAS `preview` build profile |
+| **prod** | Render `voter-info-api`, tracks `main` branch  | Neon `main` branch | EAS `production` build profile |
+
+Workflow: land feature work on `qa` first (CI deploys `voter-info-api-qa` automatically), verify there, then merge/PR `qa` into `main` to ship to prod. Both `render.yaml` services are CI-gated (`autoDeploy: false`) — GitHub Actions only pings each service's deploy hook after typecheck + build pass for that branch (see `.github/workflows/ci.yml`).
+
+Mobile build profiles live in `apps/mobile/eas.json` — `eas build --profile preview` / `--profile production` bake in the matching `EXPO_PUBLIC_API_URL`.
 
 ## Repo layout
 
@@ -63,9 +77,14 @@ Wi-Fi, and restart `npm start`.
 
 ## Wiring up the real services
 
-- **Supabase**: put the Postgres URI in `apps/api/.env` as `DATABASE_URL`, then
-  `npm run db:push` and `npm run db:seed` from `apps/api`. The API switches from
-  sample data to the database automatically.
+- **Neon**: create a project, then create `main`, `qa`, and `dev` branches
+  (Neon Console → Branches → New Branch). Put the matching branch's pooled
+  connection string in `apps/api/.env` as `DATABASE_URL` locally (use the
+  `dev` branch), and in each Render service's dashboard env vars (`main`
+  branch → `voter-info-api`, `qa` branch → `voter-info-api-qa`). Then
+  `npm run db:push` and `npm run db:seed` from `apps/api` against whichever
+  branch you're pointed at. The API switches from sample data to the database
+  automatically once `DATABASE_URL` is set.
 - **Clerk**: add `CLERK_SECRET_KEY` / `CLERK_PUBLISHABLE_KEY` to `apps/api/.env`.
   The Clerk middleware activates automatically. Adding sign-in UI to the mobile
   app (`@clerk/clerk-expo`) is the next step after hello-world.
