@@ -13,12 +13,22 @@ import { StatusBar } from "expo-status-bar";
 import { useSignIn, useSignUp } from "@clerk/expo";
 import { colors } from "../theme";
 
+// The installed @clerk/expo's runtime error shape (ClerkAPIResponseError:
+// a generic top-level `code: "api_response_error"` plus the real,
+// stable reason(s) in `errors[].code`) doesn't match its own `ClerkError`
+// type declaration (flat `code`) — confirmed by inspecting the actual
+// error object at runtime. Trust the runtime shape over the .d.ts here.
+function hasErrorCode(error: unknown, code: string): boolean {
+  const errors = (error as { errors?: { code?: string }[] } | null)?.errors;
+  return errors?.some((e) => e.code === code) ?? false;
+}
+
 // Combined "sign in or sign up" screen for the email + password instance.
 // Flow: try to sign in; if the account doesn't exist yet, create it and run
 // the email-code verification step the Clerk instance requires at sign-up.
 export function SignInScreen() {
-  const { signIn, errors: signInErrors, fetchStatus: signInStatus } = useSignIn();
-  const { signUp, errors: signUpErrors, fetchStatus: signUpStatus } = useSignUp();
+  const { signIn, fetchStatus: signInStatus } = useSignIn();
+  const { signUp, fetchStatus: signUpStatus } = useSignUp();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,13 +38,13 @@ export function SignInScreen() {
 
   const busy = signInStatus === "fetching" || signUpStatus === "fetching";
 
-  const fieldError =
-    signInErrors.fields.identifier?.message ??
-    signInErrors.fields.password?.message ??
-    signUpErrors.fields.emailAddress?.message ??
-    signUpErrors.fields.password?.message ??
-    (step === "verify" ? signUpErrors.fields.code?.message : null) ??
-    formError;
+  // Every failure branch below calls setFormError with the specific message
+  // for what just happened, so that's the only error source we display.
+  // (Clerk's own errors.fields.* from useSignIn()/useSignUp() persist across
+  // *different* calls — e.g. a signUp field error doesn't clear an earlier
+  // signIn field error — so falling back to those here showed stale,
+  // unrelated errors after the real one had already been set.)
+  const fieldError = formError;
 
   const submitCredentials = async () => {
     setFormError(null);
@@ -48,7 +58,7 @@ export function SignInScreen() {
     }
 
     // No account with this email yet -> switch to sign-up with the same creds.
-    if (error.code === "form_identifier_not_found") {
+    if (hasErrorCode(error, "form_identifier_not_found")) {
       const { error: signUpError } = await signUp.password({
         emailAddress: email,
         password,
