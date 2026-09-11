@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "scheme": "voterinfo",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.pcdavis135.voterinfo"
@@ -12,11 +13,15 @@
     "android": {
       "package": "com.pcdavis135.voterinfo"
     },
-    "web": {},
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
     "plugins": [
       "@clerk/expo",
       "expo-secure-store",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-router"
     ],
     "extra": {
       "eas": {

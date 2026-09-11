@@ -1,10 +1,12 @@
-# Render Blueprint — declares both persistent API environments:
-#   - voter-info-api     (prod, tracks main, Neon `main` branch)
-#   - voter-info-api-qa  (qa,   tracks qa,   Neon `qa` branch)
-# `dev` has no deployed Render service — that's your local machine against the
-# Neon `dev` branch (or unset DATABASE_URL, which falls back to sample data).
+# Render Blueprint — declares all four persistent environments:
+#   - voter-info-api      (API prod, tracks main, Neon `main` branch)
+#   - voter-info-api-qa   (API qa,   tracks qa,   Neon `qa` branch)
+#   - voter-info-web      (mobile app's web export, prod, tracks main)
+#   - voter-info-web-qa   (mobile app's web export, qa,   tracks qa)
+# `dev` has no deployed Render service — that's your local machine (API
+# against the Neon `dev` branch, mobile via `expo start --web`).
 #
-# Both services are CI-gated, not auto-deployed: GitHub Actions pings each
+# All services are CI-gated, not auto-deployed: GitHub Actions pings each
 # service's own deploy hook only after typecheck + build pass for that branch.
 # See .github/workflows/ci.yml.
 services:
@@ -29,6 +31,32 @@ services:
       - key: CLERK_PUBLISHABLE_KEY
         sync: false
       - key: CLERK_SECRET_KEY
+        sync: false
+
+  - type: web
+    name: voter-info-web
+    runtime: static
+    branch: main
+    buildCommand: cd apps/mobile && npm install && npx expo export --platform web
+    staticPublishPath: apps/mobile/dist
+    autoDeploy: false
+    envVars:
+      - key: EXPO_PUBLIC_API_URL
+        value: https://voter-info-api.onrender.com
+      - key: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+
+  - type: web
+    name: voter-info-web-qa
+    runtime: static
+    branch: qa
+    buildCommand: cd apps/mobile && npm install && npx expo export --platform web
+    staticPublishPath: apps/mobile/dist
+    autoDeploy: false
+    envVars:
+      - key: EXPO_PUBLIC_API_URL
+        value: https://voter-info-api-qa.onrender.com
+      - key: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
         sync: false
 
   - type: web

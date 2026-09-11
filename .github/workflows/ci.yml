@@ -35,12 +35,12 @@ jobs:
       - run: npx tsc --noEmit
 
   deploy:
-    name: Deploy API to Render
+    name: Deploy to Render
     needs: [api, mobile]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/qa'
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render deploy hook (prod)
+      - name: Trigger API deploy hook (prod)
         if: github.ref == 'refs/heads/main'
         run: |
           if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
@@ -48,7 +48,7 @@ jobs:
             exit 0
           fi
           curl -fsSL "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-      - name: Trigger Render deploy hook (qa)
+      - name: Trigger API deploy hook (qa)
         if: github.ref == 'refs/heads/qa'
         run: |
           if [ -z "${{ secrets.RENDER_QA_DEPLOY_HOOK_URL }}" ]; then
@@ -56,3 +56,19 @@ jobs:
             exit 0
           fi
           curl -fsSL "${{ secrets.RENDER_QA_DEPLOY_HOOK_URL }}"
+      - name: Trigger web deploy hook (prod)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [ -z "${{ secrets.RENDER_WEB_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_WEB_DEPLOY_HOOK_URL secret not set — skipping deploy."
+            exit 0
+          fi
+          curl -fsSL "${{ secrets.RENDER_WEB_DEPLOY_HOOK_URL }}"
+      - name: Trigger web deploy hook (qa)
+        if: github.ref == 'refs/heads/qa'
+        run: |
+          if [ -z "${{ secrets.RENDER_WEB_QA_DEPLOY_HOOK_URL }}" ]; then
+            echo "RENDER_WEB_QA_DEPLOY_HOOK_URL secret not set — skipping deploy."
+            exit 0
+          fi
+          curl -fsSL "${{ secrets.RENDER_WEB_QA_DEPLOY_HOOK_URL }}"
